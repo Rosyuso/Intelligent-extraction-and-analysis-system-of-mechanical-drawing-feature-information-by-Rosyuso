@@ -108,10 +108,12 @@ def del_sim(block_list):
 
 
 def block_clean(hori_path,hori_txt,vert_txt):
-    img_hori = cv2.imread(hori_path)
-    img_vert = np.rot90(img_hori,axes=(1,0)) #右旋90度
+    # img_hori = cv2.imread('./figures/'+ hori_path)
+    # img_vert = np.rot90(img_hori,axes=(1,0)) #右旋90度
+    img_vert = cv2.imread('test4_90.png')#右旋90度
+   
     # 调用craft,生成定位的坐标TXT文件
-    # os.system("python D:/vs_python_opencv_tesseract/package/test.py") #python 后面需要接绝对路径，生成txt文件
+    os.system("D:/anaconda/envs/pytorch_/python.exe D:/vs_python_opencv_tesseract/package/craft_test.py ") #python 后面需要接绝对路径，生成txt文件
     f = open(hori_txt,'r') #图片的检测结果txt
     coor_list = f.readlines() #存成每一行数据的列表
     f_90 = open(vert_txt,'r') #右转90图片的检测结果txt
@@ -127,25 +129,9 @@ def block_clean(hori_path,hori_txt,vert_txt):
     # print(final_block)
     return final_hori_block,final_vert_block
 
-final_hori_block,final_vert_block = block_clean('res_test4.jpg','res_test4.jpg'.split('.')[0]+'.txt','res_test4.jpg'.split('.')[0]+'_90.txt')
+# final_hori_block,final_vert_block = block_clean('res_test4.jpg','res_test4.jpg'.split('.')[0]+'.txt','res_test4.jpg'.split('.')[0]+'_90.txt')
 
 # print(final_hori_block,final_hori_block)
-
-# def detection_postprocessing(final_hori_block,final_vert_block):
-    
-#     '''
-#     需要后处理的情况：
-#     1.两张图片相差无几，坐标像素相差5以内，只留一张
-#     2.横竖两次检测出现同一个字符，以横检测为主，删掉竖检测
-#     '''
-#     final_hori_block = del_sim(final_hori_block)
-#     final_vert_block = del_sim(final_vert_block)
-#     # print(final_hori_block,len(final_hori_block))
-#     return final_hori_block,final_vert_block
-
-
-    
-
 
 # img_hori = cv2.imread('res_test4.jpg')
 # img_vert = np.rot90(img_hori,axes=(1,0)) #右旋90度
