@@ -70,7 +70,11 @@ def integration_check(coor_cleansed, rotate, w=None, h=None):
         # 判断竖框
         width = int(m[2]) - int(m[0])
         height = int(m[3]) - int(m[1])
-        if height / width >= hw_threshold:
+        # print(m,width)
+        if width == 0  or height == 0:
+            coor_cleansed.index(m)
+            continue
+        elif height / width >= hw_threshold:
             if rotate == 90:  #当前检测为横向，生成右旋90度的坐标
                 vert_block.append([str(h - int(m[3])),m[0],str(h - int(m[1])),m[2]])
                 vert_index.append(coor_cleansed.index(m)) #把竖框的索引放到index列表中
@@ -78,7 +82,8 @@ def integration_check(coor_cleansed, rotate, w=None, h=None):
             elif rotate == -90: #当前检测为纵向，生成左旋90度的坐标
                 vert_block.append([m[1],str(w - int(m[2])),m[3],str(w - int(m[0]))])
                 vert_index.append(coor_cleansed.index(m)) #把竖框的索引放到index列表中
-                # print(vert_block,'v_h')
+            else:
+                raise Exception('invalid rotation parameter')
 
     
     coor_cleansed = [coor_cleansed[i] for i in range(len(coor_cleansed)) if (i not in vert_index)] #删除选中的框
@@ -89,10 +94,14 @@ def integration_check(coor_cleansed, rotate, w=None, h=None):
 
 def similariity_check():
     '''比较横竖两次检测的相同框'''
+
     pass
 
 def del_sim(block_list):
-    '''删除同位置的框'''
+    '''
+    1.删除同位置的框：以（两次检测中的长方形）为准
+    2.若出现大框套小框的情况，删除其中的小框
+    '''
     index = []
     for i in range(len(block_list)):
         for j in range(i+1, len(block_list)):
@@ -107,11 +116,10 @@ def del_sim(block_list):
     return block_list
 
 
-def block_clean(hori_path,hori_txt,vert_txt):
+def block_clean(img_vert,hori_txt,vert_txt):
     # img_hori = cv2.imread('./figures/'+ hori_path)
     # img_vert = np.rot90(img_hori,axes=(1,0)) #右旋90度
-    img_vert = cv2.imread('test4_90.png')#右旋90度
-   
+    # img_vert = cv2.imread(os.path.join(rotate_path,img_name.split('.')[0] + '_90.png'))#右旋90度
     # 调用craft,生成定位的坐标TXT文件
     os.system("D:/anaconda/envs/pytorch_/python.exe D:/vs_python_opencv_tesseract/package/craft_test.py ") #python 后面需要接绝对路径，生成txt文件
     f = open(hori_txt,'r') #图片的检测结果txt

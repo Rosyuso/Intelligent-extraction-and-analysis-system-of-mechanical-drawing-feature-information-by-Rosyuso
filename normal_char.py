@@ -93,7 +93,7 @@ def demo(opt):
                 preds_str = converter.decode(preds_index, length_for_pred)
 
 
-            log = open(f'./normal_result.txt', 'a',encoding='utf-8')
+            log = open(f'./normal_result.txt', 'w',encoding='utf-8')
             dashed_line = '-' * 80
             head = f'{"image_path":25s}\t{"predicted_labels":25s}\tconfidence score'
             
@@ -114,7 +114,7 @@ def demo(opt):
                 confidence_score = pred_max_prob.cumprod(dim=0)[-1]
 
                 print(f'{img_name:25s}\t{pred:25s}\t{confidence_score:0.4f}')
-                log.write(f'{img_name:25s}\t{pred:25s}\t{confidence_score:0.4f}\n')
+                log.write(f'{img_name}\t{pred}\t{confidence_score}\n')
 
             log.close()
 
