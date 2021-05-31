@@ -40,7 +40,7 @@ def detection(img_name,path):
     img = cv2.imread(os.path.join(rotate_path,img_name))
     img_90 = cv2.imread(os.path.join(rotate_path,img_name.split('.')[0] + '_90.png'))
     final_hori_block,final_vert_block = my_detector.block_clean(img_90, os.path.join(rotate_path,'res_' + img_name.split('.')[0]+'.txt'), os.path.join(rotate_path,'res_' + img_name.split('.')[0]+'_90.txt'))
-    print(final_vert_block)
+    print(final_hori_block,'\n',final_vert_block)
     #      [['537', '24', '571', '59'], ['143', '95', '195', '128'], ['191', '271', '225', '304'],
     #     ['371', '271', '405', '304'], ['569', '271', '606', '304'], ['63', '399', '114', '434'], 
     #     ['807', '411', '843', '445'], ['960', '415', '984', '445'], ['1032', '594', '1065', '631'],
@@ -48,12 +48,18 @@ def detection(img_name,path):
     #      ['625', '365', '699', '397'], ['774', '569', '862', '613'], ['575', '765', '654', '798']]
     for i in final_hori_block:
         # 对于每个坐标截图保存
+        if int(i[0]) > img.shape[1] or int(i[2]) > img.shape[1] or int(i[1]) > img.shape[0] or int(i[3]) > img.shape[0]:
+            continue
+        print(i)
         hcropped_coor_img = img[int(i[1]):int(i[3]),int(i[0]):int(i[2])]
         cv2.imwrite(path+'H,'+str(i)[1:-1]+'.png',hcropped_coor_img)
     for j in final_vert_block:
         print(j)
         # 对于每个坐标截图保存
+        if int(j[0]) > img_90.shape[1] or int(j[2]) > img_90.shape[1] or int(j[1]) > img_90.shape[0] or int(j[3]) > img_90.shape[0]:
+            continue
         vcropped_coor_img = img_90[int(j[1]):int(j[3]),int(j[0]):int(j[2])]
+        
         cv2.imwrite(path+'V,'+str(j)[1:-1]+'.png',vcropped_coor_img)
 
 # detection('test4.png')
@@ -139,9 +145,12 @@ def main(img_name, normal=True):
     raise ValueError("Axes={} out of range for array of ndim={}."
 ValueError: Axes=(0, 1) out of range for array of ndim=0.'''
 
-
+list_pic = os.listdir('./original_rotate')
+# print(list_pic)
 if __name__ == '__main__':
-    main('480.png',False)
+    main(list_pic[0],False)
+    shutil.rmtree('./original_rotate')
+    os.mkdir('original_rotate')
 
 
 

@@ -14,14 +14,15 @@ def clean_coor(coor_list):
     for x in range(len(coor_list)):
         if x%2==0:
             res.append(coor_list[x])
-        else:
-            pass
     for i in res:
         L = []
-        L.append(i.split(',')[0])
-        L.append(i.split(',')[1])
-        L.append(i.split(',')[4])
-        L.append(i.split(',')[5])
+        if i.split(',')[0] > i.split(',')[4] or i.split(',')[1] > i.split(',')[5]:
+            continue
+        else:
+            L.append(i.split(',')[0])
+            L.append(i.split(',')[1])
+            L.append(i.split(',')[4])
+            L.append(i.split(',')[5])
         coor_cleansed.append(L)
     return coor_cleansed
 
@@ -76,12 +77,16 @@ def integration_check(coor_cleansed, rotate, w=None, h=None):
             continue
         elif height / width >= hw_threshold:
             if rotate == 90:  #当前检测为横向，生成右旋90度的坐标
-                vert_block.append([str(h - int(m[3])),m[0],str(h - int(m[1])),m[2]])
-                vert_index.append(coor_cleansed.index(m)) #把竖框的索引放到index列表中
+                if (h - int(m[3]) < 0):
+                    vert_index.append(coor_cleansed.index(m)) #把竖框的索引放到index列表中
+                else:
+                    vert_block.append([str(h - int(m[3])),m[0],str(h - int(m[1])),m[2]])
+                    vert_index.append(coor_cleansed.index(m)) #把竖框的索引放到index列表中
                 # print(vert_block,'h_v')
-            elif rotate == -90: #当前检测为纵向，生成左旋90度的坐标
+            elif rotate == -90 and w - int(m[2]) > 0 and w - int(m[0]) > 0: #当前检测为纵向，生成左旋90度的坐标
                 vert_block.append([m[1],str(w - int(m[2])),m[3],str(w - int(m[0]))])
                 vert_index.append(coor_cleansed.index(m)) #把竖框的索引放到index列表中
+
             else:
                 raise Exception('invalid rotation parameter')
 
@@ -109,8 +114,10 @@ def del_sim(block_list):
             if (abs((int(block_list[i][0]) - int(block_list[j][0]))) <= pixel_threshold) and \
                (abs((int(block_list[i][1]) - int(block_list[j][1]))) <= pixel_threshold) and \
                (abs((int(block_list[i][2]) - int(block_list[j][2]))) <= pixel_threshold) and \
-               (abs((int(block_list[i][3]) - int(block_list[j][3]))) <= pixel_threshold):
+               (abs((int(block_list[i][3]) - int(block_list[j][3]))) <= pixel_threshold) :
                index.append(j)
+            elif int(block_list[i][0]) < 0 or int(block_list[i][1]) < 0 or int(block_list[i][2]) < 0 or int(block_list[i][3]) < 0 : #出现负坐标也删除
+                index.append(j)
     # print(index)      
     block_list = [block_list[i] for i in range(len(block_list)) if (i not in index)] #删除选中的框
     return block_list
