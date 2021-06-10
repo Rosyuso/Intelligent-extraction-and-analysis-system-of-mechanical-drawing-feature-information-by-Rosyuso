@@ -40,7 +40,8 @@ def detection(img_name,path):
     img = cv2.imread(os.path.join(rotate_path,img_name))
     img_90 = cv2.imread(os.path.join(rotate_path,img_name.split('.')[0] + '_90.png'))
     final_hori_block,final_vert_block = my_detector.block_clean(img_90, os.path.join(rotate_path,'res_' + img_name.split('.')[0]+'.txt'), os.path.join(rotate_path,'res_' + img_name.split('.')[0]+'_90.txt'))
-    print(final_hori_block,'\n',final_vert_block)
+    # 两个列表都只含横框，截图识别后把纵检测的横框转换成横检测里的框，再展示
+    # print('已处理'*10,final_hori_block,'\n',final_vert_block)
     #      [['537', '24', '571', '59'], ['143', '95', '195', '128'], ['191', '271', '225', '304'],
     #     ['371', '271', '405', '304'], ['569', '271', '606', '304'], ['63', '399', '114', '434'], 
     #     ['807', '411', '843', '445'], ['960', '415', '984', '445'], ['1032', '594', '1065', '631'],
@@ -50,11 +51,11 @@ def detection(img_name,path):
         # 对于每个坐标截图保存
         if int(i[0]) > img.shape[1] or int(i[2]) > img.shape[1] or int(i[1]) > img.shape[0] or int(i[3]) > img.shape[0]:
             continue
-        print(i)
+        print(i,'H已处理')
         hcropped_coor_img = img[int(i[1]):int(i[3]),int(i[0]):int(i[2])]
         cv2.imwrite(path+'H,'+str(i)[1:-1]+'.png',hcropped_coor_img)
     for j in final_vert_block:
-        print(j)
+        print(j,'V已处理')
         # 对于每个坐标截图保存
         if int(j[0]) > img_90.shape[1] or int(j[2]) > img_90.shape[1] or int(j[1]) > img_90.shape[0] or int(j[3]) > img_90.shape[0]:
             continue
@@ -84,9 +85,9 @@ def special_char():
         --Transformation TPS \
             --FeatureExtraction ResNet \
                 --SequenceModeling BiLSTM \
-                    --Prediction CTC \
+                    --Prediction Attn \
                         --image_folder special_cropped_img/ \
-                            --saved_model self_trained_2.pth") 
+                            --saved_model self_Attn.pth") 
 # special_char()
 
 def result_feedback(txt_name,img_name):
@@ -94,10 +95,14 @@ def result_feedback(txt_name,img_name):
     h = get_h(img_name,rotate_path)
     f = open(txt_name,'r',encoding='utf-8')
     result_list = f.readlines()
+    # 列表的元素是形如"special_cropped_img/H,'41', '233', '77', '250'.png\tR15                      \t0.9995\n" 的字符串
+    # print(result_list)
     clean_list = []
-    for i in range(len(result_list)):
+    for i in range(1,len(result_list)):
+        # print(result_list[i])
         if result_list[i].split(',')[0][-1] == 'V':
             trans_v = (int(result_list[i].split('\'')[3]),h - int(result_list[i].split('\'')[5]),int(result_list[i].split('\'')[7]),h - int(result_list[i].split('\'')[1]),result_list[i].split('\t')[1])
+            # 以'分割字符串
             clean_list.append(trans_v)
         elif result_list[i].split(',')[0][-1] == 'H':
             clean_list.append((int(result_list[i].split('\'')[1]),int(result_list[i].split('\'')[3]),int(result_list[i].split('\'')[5]),int(result_list[i].split('\'')[7]),result_list[i].split('\t')[1]))
@@ -110,6 +115,7 @@ def Visualization(result_list,img_name):
     for i in result_list:
         cv2.rectangle(img,(i[0],i[1]),(i[2],i[3]),(0,0,255),1)
         cv2.putText(img,i[4],(i[0]-5,i[1]-5),cv2.FONT_ITALIC,0.5,(255,0,0),1)
+        cv2.namedWindow('recg_result',cv2.WINDOW_NORMAL)
     cv2.imshow('recg_result',img)
     cv2.waitKey(0)
 
