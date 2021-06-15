@@ -4,29 +4,33 @@ import os
 
 
 pixel_threshold = 5 
-hw_threshold = 1.3 #高宽比
+hw_threshold = 1.2 #高宽比
 
 
 
 def clean_coor(coor_list):
     res=[]
-    coor_cleansed = []
+    coor_normal_cleansed = []
+    coor_skew_cleansed = []
     for x in range(len(coor_list)):
         if x%2==0:
             res.append(coor_list[x])
     print('-0-0-0-0',res)
     for i in res:
-        L = []
-        if i.split(',')[0] > i.split(',')[4] or i.split(',')[1] > i.split(',')[5]:
-            continue
+        tmp = i.split(',')
+        if int(tmp[0]) != int(tmp[6]) or int(tmp[1]) != int(tmp[3]) or  int(tmp[2]) != int(tmp[4]) or int(tmp[5])!= int(tmp[7]):
+            #判定为倾斜框
+            L_skew = list()
+            L_skew.extend([[int(tmp[0]),int(tmp[1])],[int(tmp[2]),int(tmp[3])],[int(tmp[4]),int(tmp[5])],[int(tmp[6]),int(tmp[7])]])
+            coor_skew_cleansed.append(L_skew)
         else:
-            L.append(i.split(',')[0])
-            L.append(i.split(',')[1])
-            L.append(i.split(',')[4])
-            L.append(i.split(',')[5])
-        coor_cleansed.append(L)
-  
-    return coor_cleansed
+            L_normal = list()
+            L_normal.extend([i.split(',')[0],i.split(',')[1],i.split(',')[4],i.split(',')[5]])
+            coor_normal_cleansed.append(L_normal)
+    print('倾斜',coor_skew_cleansed)
+    print('垂直',coor_normal_cleansed)
+
+    return coor_normal_cleansed, coor_skew_cleansed
 
 
 def integration_check(coor_cleansed, rotate, w=None, h=None):
@@ -99,7 +103,7 @@ def integration_check(coor_cleansed, rotate, w=None, h=None):
     vert_index = []
     for m in coor_cleansed: #在正常检测情况下，如果检测到竖框，则识别右旋90度对应位置的内容
         # 判断竖框
-        print(m)
+        # print(m)
         width = int(m[2]) - int(m[0])
         height = int(m[3]) - int(m[1])
         if height / width >= hw_threshold:
@@ -153,22 +157,23 @@ def block_clean(img_vert,hori_txt,vert_txt):
     os.system("D:/anaconda/envs/pytorch_/python.exe D:/vs_python_opencv_tesseract/package/craft_test.py ") #python 后面需要接绝对路径，生成txt文件
     f = open(hori_txt,'r') #图片的检测结果txt
     coor_list = f.readlines() #存成每一行数据的列表
-    print('-原始横'*10,coor_list)
+    # print('-原始横'*10,coor_list)
     f_90 = open(vert_txt,'r') #右转90图片的检测结果txt
     coor_list_90 = f_90.readlines() #存成每一行数据的列表
     # h, w, d = img_vert.shape
-    w, h, d = img_vert.shape
-    coor_cleansed = clean_coor(coor_list)
-    print('-未处理横'*10,coor_cleansed)
-    coor_cleansed_90 = clean_coor(coor_list_90)
-    print('-未处理竖'*10,coor_cleansed)
+    w, h = img_vert.shape[:-1]
+    coor_cleansed,hori_skew_cleansed = clean_coor(coor_list)
+    
+    # print('-未处理横'*10,coor_cleansed)
+    coor_cleansed_90 = clean_coor(coor_list_90)[0]
+    # print('-未处理竖'*10,coor_cleansed)
     new_block_hori = integration_check(coor_cleansed,90, h=h)
     new_block_vert = integration_check(coor_cleansed_90,-90,w=w)
     # final_hori_block = del_sim(new_block_hori[0] + new_block_vert[1])
     # final_vert_block = del_sim(new_block_vert[0] + new_block_hori[1])
     # final_block = final_hori_block + final_vert_block
     # print(final_block)
-    return new_block_hori,new_block_vert
+    return new_block_hori,new_block_vert,hori_skew_cleansed
 
 # final_hori_block,final_vert_block = block_clean('res_test4.jpg','res_test4.jpg'.split('.')[0]+'.txt','res_test4.jpg'.split('.')[0]+'_90.txt')
 

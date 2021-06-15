@@ -3,17 +3,18 @@ import sys
 import numpy as np
 import os 
 import my_detector
+import skew_correction
 import re 
 import shutil
 
 
-# 清空上次识别的结果
-crop_list = [] #鼠标截取的坐标，形如[[(x1,y1),(x2,y2)],[(x3,y3),(x4,y4)]...]
-# img = cv2.imread('D:/vs_python_opencv_tesseract/package/figures/test4.png') #输入完整图纸
-path ='./' #存放截图的文件夹
-# print(os.path.realpath(__file__))
-detect_folder = ''  #存放检测到文本截图的文件夹
-result_txt = '' #存放识别结果的txt文件
+# # 清空上次识别的结果
+# crop_list = [] #鼠标截取的坐标，形如[[(x1,y1),(x2,y2)],[(x3,y3),(x4,y4)]...]
+# # img = cv2.imread('D:/vs_python_opencv_tesseract/package/figures/test4.png') #输入完整图纸
+# path ='./' #存放截图的文件夹
+# # print(os.path.realpath(__file__))
+# detect_folder = ''  #存放检测到文本截图的文件夹
+# result_txt = '' #存放识别结果的txt文件
 rotate_path = './original_rotate'
 # print(img.shape)
 # cropped = img[100:500,400:500]
@@ -39,22 +40,29 @@ def detection(img_name,path):
     '''调用craft,返回整合好的横竖坐标列表,截取并保存每个坐标图'''
     img = cv2.imread(os.path.join(rotate_path,img_name))
     img_90 = cv2.imread(os.path.join(rotate_path,img_name.split('.')[0] + '_90.png'))
-    final_hori_block,final_vert_block = my_detector.block_clean(img_90, os.path.join(rotate_path,'res_' + img_name.split('.')[0]+'.txt'), os.path.join(rotate_path,'res_' + img_name.split('.')[0]+'_90.txt'))
+    normal_hori_block,normal_vert_block,skew_hori_block = my_detector.block_clean(img_90, os.path.join(rotate_path,'res_' + img_name.split('.')[0]+'.txt'), os.path.join(rotate_path,'res_' + img_name.split('.')[0]+'_90.txt'))
     # 两个列表都只含横框，截图识别后把纵检测的横框转换成横检测里的框，再展示
-    # print('已处理'*10,final_hori_block,'\n',final_vert_block)
+    # print('已处理'*10,normal_hori_block,'\n',normal_vert_block,skew_hori_block)
     #      [['537', '24', '571', '59'], ['143', '95', '195', '128'], ['191', '271', '225', '304'],
     #     ['371', '271', '405', '304'], ['569', '271', '606', '304'], ['63', '399', '114', '434'], 
     #     ['807', '411', '843', '445'], ['960', '415', '984', '445'], ['1032', '594', '1065', '631'],
     #     ['828', '602', '875', '642'], ['807', '774', '843', '808'], ['1137', '22', '1187', '59'],
     #      ['625', '365', '699', '397'], ['774', '569', '862', '613'], ['575', '765', '654', '798']]
-    for i in final_hori_block:
+    for i in normal_hori_block:
         # 对于每个坐标截图保存
         if int(i[0]) > img.shape[1] or int(i[2]) > img.shape[1] or int(i[1]) > img.shape[0] or int(i[3]) > img.shape[0]:
             continue
         print(i,'H已处理')
         hcropped_coor_img = img[int(i[1]):int(i[3]),int(i[0]):int(i[2])]
         cv2.imwrite(path+'H,'+str(i)[1:-1]+'.png',hcropped_coor_img)
-    for j in final_vert_block:
+
+    for m in skew_hori_block:
+        result = skew_correction.skew_correction(img,m)
+        if result:
+            cv2.imwrite(path+'HS,'+str(m)[1:-1]+'.png',result)
+            print(m,'HS已处理')
+
+    for j in normal_vert_block: #,skew_hori_block:
         print(j,'V已处理')
         # 对于每个坐标截图保存
         if int(j[0]) > img_90.shape[1] or int(j[2]) > img_90.shape[1] or int(j[1]) > img_90.shape[0] or int(j[3]) > img_90.shape[0]:
@@ -106,15 +114,26 @@ def result_feedback(txt_name,img_name):
             clean_list.append(trans_v)
         elif result_list[i].split(',')[0][-1] == 'H':
             clean_list.append((int(result_list[i].split('\'')[1]),int(result_list[i].split('\'')[3]),int(result_list[i].split('\'')[5]),int(result_list[i].split('\'')[7]),result_list[i].split('\t')[1]))
-        else:
-            pass
+        elif result_list[i].split(',')[0].split('/')[-1] == 'HS':
+            # print(result_list[i].split(','))
+            # print(int(result_list[i].split(',')[8].split(']')[0]))
+            clean_list.append((int(result_list[i].split(',')[1][1:]),int(result_list[i].split(',')[2][:-1]),int(result_list[i].split(',')[3][2:]),int(result_list[i].split(',')[4][:-1]),int(result_list[i].split(',')[5][2:]),int(result_list[i].split(',')[6][:-1]),int(result_list[i].split(',')[7][2:]),int(result_list[i].split(',')[8].split(']')[0]),result_list[i].split('\t')[1]))
+        # print(clean_list)
     return clean_list
     
 def Visualization(result_list,img_name):
     img = cv2.imread(os.path.join(rotate_path,img_name))
     for i in result_list:
+        if len(i) == 9:
+            cv2.line(img,(i[0],i[1]),(i[2],i[3]),(0,255,0),1)
+            cv2.line(img,(i[2],i[3]),(i[4],i[5]),(0,255,0),1)
+            cv2.line(img,(i[4],i[5]),(i[6],i[7]),(0,255,0),1) 
+            cv2.line(img,(i[6],i[7]),(i[0],i[1]),(0,255,0),1)
+            cv2.putText(img,i[8],(i[0]-5,i[1]-5),cv2.FONT_ITALIC,0.5,(255,0,0),2)
+            continue
+            # cv2.drawContours(img, [i], 0, (255, 0, 0),1)
         cv2.rectangle(img,(i[0],i[1]),(i[2],i[3]),(0,0,255),1)
-        cv2.putText(img,i[4],(i[0]-5,i[1]-5),cv2.FONT_ITALIC,0.5,(255,0,0),1)
+        cv2.putText(img,i[4],(i[0]-5,i[1]-5),cv2.FONT_ITALIC,0.5,(255,0,0),2)
         cv2.namedWindow('recg_result',cv2.WINDOW_NORMAL)
     cv2.imshow('recg_result',img)
     cv2.waitKey(0)
