@@ -81,7 +81,11 @@ def skew_correction(img,test_coor):
         print('width',rect[1][0])
         print('height',rect[1][1])
         result = rotate_bound(img_vert,angle)
-        # cv2.imwrite('S' + 'zuobiao.png',result)
+        H,W = result.shape[:-1] 
+        text_width = max(rect[1][0],rect[1][1])
+        text_height = min(rect[1][0],rect[1][1])
+        #把白边切割掉
+        result = result[int(H/2 - text_height/2):int(H/2 + text_height/2),int(W/2 - text_width/2):int(W/2 + text_width/2)]
         return result
 
 # print(rect,'-'*10,rect_nor)

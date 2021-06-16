@@ -58,7 +58,9 @@ def detection(img_name,path):
 
     for m in skew_hori_block:
         result = skew_correction.skew_correction(img,m)
-        if result:
+        if result is False:
+            continue
+        else:
             cv2.imwrite(path+'HS,'+str(m)[1:-1]+'.png',result)
             print(m,'HS已处理')
 
@@ -73,28 +75,38 @@ def detection(img_name,path):
 
 # detection('test4.png')
 
-def eng_digits(img_name):
-    '''识别英文和数字'''
-    # cropped_img = img[cc[0][1]:cc[1][1],cc[0][0]:cc[1][0]] #截取图片
-    os.system('''D:/anaconda/envs/pytorch_/python.exe d:/vs_python_opencv_tesseract/package/normal_char.py \
-        --Transformation TPS \
-            --FeatureExtraction ResNet \
-                --SequenceModeling BiLSTM \
-                    --Prediction Attn \
-                        --image_folder normal_cropped_img/ \
-                            --saved_model TPS-ResNet-BiLSTM-Attn-case-sensitive.pth \
-                                --sensitive''') 
+# def eng_digits(img_name):
+#     '''识别英文和数字'''
+#     # cropped_img = img[cc[0][1]:cc[1][1],cc[0][0]:cc[1][0]] #截取图片
+#     os.system('''D:/anaconda/envs/pytorch_/python.exe d:/vs_python_opencv_tesseract/package/normal_char.py \
+#         --Transformation TPS \
+#             --FeatureExtraction ResNet \
+#                 --SequenceModeling BiLSTM \
+#                     --Prediction Attn \
+#                         --image_folder normal_cropped_img/ \
+#                             --saved_model TPS-ResNet-BiLSTM-Attn-case-sensitive.pth \
+#                                 --sensitive''') 
 
 # eng_digits()
 
-def special_char():
-    '''识别公差框、孔特征等'''
+def recognition1():
+    '''普通模式'''
     os.system("D:/anaconda/envs/pytorch_/python.exe d:/vs_python_opencv_tesseract/package/special_char.py \
         --Transformation TPS \
             --FeatureExtraction ResNet \
                 --SequenceModeling BiLSTM \
                     --Prediction Attn \
                         --image_folder special_cropped_img/ \
+                            --saved_model self_Attn.pth") 
+
+def recognition2():
+    '''跳过检测直接识别公差框、孔特征等'''
+    os.system("D:/anaconda/envs/pytorch_/python.exe d:/vs_python_opencv_tesseract/package/special_char.py \
+        --Transformation TPS \
+            --FeatureExtraction ResNet \
+                --SequenceModeling BiLSTM \
+                    --Prediction Attn \
+                        --image_folder manual_cropped_img/ \
                             --saved_model self_Attn.pth") 
 # special_char()
 
@@ -129,33 +141,40 @@ def Visualization(result_list,img_name):
             cv2.line(img,(i[2],i[3]),(i[4],i[5]),(0,255,0),1)
             cv2.line(img,(i[4],i[5]),(i[6],i[7]),(0,255,0),1) 
             cv2.line(img,(i[6],i[7]),(i[0],i[1]),(0,255,0),1)
-            cv2.putText(img,i[8],(i[0]-5,i[1]-5),cv2.FONT_ITALIC,0.5,(255,0,0),2)
+            # cv2.putText(img,i[8],(i[0]-5,i[1]-5),cv2.FONT_ITALIC,0.5,(255,0,0),2)
             continue
             # cv2.drawContours(img, [i], 0, (255, 0, 0),1)
         cv2.rectangle(img,(i[0],i[1]),(i[2],i[3]),(0,0,255),1)
-        cv2.putText(img,i[4],(i[0]-5,i[1]-5),cv2.FONT_ITALIC,0.5,(255,0,0),2)
+        # cv2.putText(img,i[4],(i[0]-5,i[1]-5),cv2.FONT_ITALIC,0.5,(255,0,0),2)
         cv2.namedWindow('recg_result',cv2.WINDOW_NORMAL)
     cv2.imshow('recg_result',img)
     cv2.waitKey(0)
 
 
-def main(img_name, normal=True):
+def main(img_name,opt):
     h_90 = rotate(img_name,rotate_path)
-    if normal: #英文和数字
-        shutil.rmtree('./normal_cropped_img')
-        os.mkdir('normal_cropped_img')
-        detection(img_name,'./normal_cropped_img/') #生成裁剪后的文本截图
-        eng_digits(img_name)
-        clean_list = result_feedback('normal_result.txt',img_name)
-        Visualization(clean_list,img_name)
+    # if normal: #英文和数字
+    #     shutil.rmtree('./normal_cropped_img')
+    #     os.mkdir('normal_cropped_img')
+    #     detection(img_name,'./normal_cropped_img/') #生成裁剪后的文本截图
+    #     eng_digits(img_name)
+    #     clean_list = result_feedback('normal_result.txt',img_name)
+    #     Visualization(clean_list,img_name)
         
-    else: #特殊字符
+    # else: #特殊字符
+    if opt == 0: #普通模式
         shutil.rmtree('./special_cropped_img')
         os.mkdir('special_cropped_img')
         detection(img_name,'./special_cropped_img/') #生成裁剪后的文本截图
-        special_char()
+        recognition1()
         clean_list = result_feedback('special_result.txt',img_name)
         Visualization(clean_list,img_name)
+    elif opt == 1: #跳过检测直接识别
+        recognition2()
+        clean_list = result_feedback('special_result.txt',img_name)
+        Visualization(clean_list,img_name)
+
+
 
 #改名字！！！
 '''Traceback (most recent call last):
@@ -173,7 +192,7 @@ ValueError: Axes=(0, 1) out of range for array of ndim=0.'''
 list_pic = os.listdir('./original_rotate')
 # print(list_pic)
 if __name__ == '__main__':
-    main(list_pic[0],False)
+    main(list_pic[0],0)
     shutil.rmtree('./original_rotate')
     os.mkdir('original_rotate')
 

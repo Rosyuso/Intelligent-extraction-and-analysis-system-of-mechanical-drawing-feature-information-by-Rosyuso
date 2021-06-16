@@ -4,7 +4,8 @@ import os
 
 
 pixel_threshold = 5 
-hw_threshold = 1.2 #高宽比
+hw_threshold_hori = 1.2 #横检测高宽比
+hw_threshold_vert = 1 #纵检测高宽比
 
 
 
@@ -33,7 +34,7 @@ def clean_coor(coor_list):
     return coor_normal_cleansed, coor_skew_cleansed
 
 
-def integration_check(coor_cleansed, rotate, w=None, h=None):
+def integration_check(coor_cleansed, rotate,hw_threshold):
     '''判定准则
     1.若两框中心x或y方向距离小于边长相交的距离（或者很接近），则判定为一个框，以大框为主扩展；
     2.横竖检测后先合并框，再将两次检测到的竖框互换；
@@ -167,8 +168,8 @@ def block_clean(img_vert,hori_txt,vert_txt):
     # print('-未处理横'*10,coor_cleansed)
     coor_cleansed_90 = clean_coor(coor_list_90)[0]
     # print('-未处理竖'*10,coor_cleansed)
-    new_block_hori = integration_check(coor_cleansed,90, h=h)
-    new_block_vert = integration_check(coor_cleansed_90,-90,w=w)
+    new_block_hori = integration_check(coor_cleansed,90, hw_threshold_hori)
+    new_block_vert = integration_check(coor_cleansed_90,-90,hw_threshold_hori)
     # final_hori_block = del_sim(new_block_hori[0] + new_block_vert[1])
     # final_vert_block = del_sim(new_block_vert[0] + new_block_hori[1])
     # final_block = final_hori_block + final_vert_block
