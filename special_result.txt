@@ -1,74 +1,11 @@
-2021-05-25 10:28:56	--------------------------------------------------------------------------------
-demo_image/0.1X45jdu.png 	0.1X45°                  	0.5008
-demo_image/2.65H13x∅83.5H12.png	2∅6.812                  	0.0000
-demo_image/13.63±0.05.png	1.3±0.05                 	0.1605
-demo_image/25±0.1.png    	25±0.1                   	0.0974
-demo_image/30.26±0.2.png 	3.25±0.2                 	0.1481
-demo_image/45±0.1.png    	45±0.1                   	0.1899
-demo_image/50±0.1.png    	50±0.1                   	0.2300
-demo_image/54.33±0.2.png 	5..3±0.2                 	0.0060
-demo_image/102.14±0.2.png	1.2±0.2                  	0.0642
-demo_image/126.21±0.2.png	∅.2±0.2                  	0.0765
-demo_image/chuizhidufai0.01A.png	⊥∅0.01A                  	0.0733
-demo_image/duichendu0.06CRQ.png	⚍0.06CRQ                 	0.1956
-demo_image/pingmiandu0.5T.png	▱0.5T                    	0.9291
-demo_image/pingxingdu0.05A.png	∥0.034A                  	0.0698
-demo_image/qingxiedu0.02E.png	∠0.02E                   	0.4684
-demo_image/quantiaodong0.04D.png	⇉0.04D                   	0.6440
-demo_image/section.png   	☩∅..±Ⓜ贯°                 	0.0000
-demo_image/test1.png     	◚0.8                     	0.0085
-demo_image/test2.png     	◚..60                    	0.0024
-demo_image/test4.png     	∅.7±0.02                 	0.1042
-demo_image/test5.png     	∅1.±0.08                 	0.0449
-demo_image/test.png      	☩∅0.3UP                  	0.6626
-demo_image/tongzhoudufai0.07B.png	◎∅0.07B                  	0.5947
-demo_image/xianlunkuodu0.05.png	◚0.6                     	0.6353
-demo_image/―0.01.png     	―0.01                    	0.2734
-demo_image/↗0.1A.png     	↗0.1A                    	0.5681
-demo_image/↗0.01B.png    	↗0.01B                   	0.4966
-demo_image/↗0.01C.png    	↗0.01C                   	0.4493
-demo_image/↗0.05AB.png   	↗0.05AB                  	0.4175
-demo_image/⊥A0.05.png    	⊥0.0.05                  	0.2536
-demo_image/▱0.1.png      	▱0.1                     	0.7859
-demo_image/▱0.05.png     	▱0.05                    	0.3700
-demo_image/▱ 0.05.png    	▱0.05                    	0.6018
-demo_image/▱.png         	47                       	0.8527
-demo_image/◉0.03B-E.png  	◎0.03BD                  	0.2974
-demo_image/◉0.05T.png    	◎0.05T                   	0.7852
-demo_image/◉∅0.01B.png   	☩0.01B                   	0.1432
-demo_image/◉∅0.02A.png   	☩0.02A                   	0.3290
-demo_image/◉∅0.02N.png   	◎∅0.02N                  	0.3378
-demo_image/◉∅0.05C.png   	☩0.05C                   	0.3813
-demo_image/☩0.05F.png    	☩0.05F                   	0.4072
-demo_image/☩∅0.2.png     	☩∅0.2                    	0.0600
-demo_image/☩∅0.5A-BC-D.png	☩∅0.5BDBD                	0.0284
-demo_image/☩∅0.05C-D.png 	☩∅0.05DD                 	0.2052
-demo_image/☩∅0.6ABC.png  	☩∅0.6C                   	0.1677
-demo_image/⚍0.2E.png     	⚍0.2E                    	0.6258
-2021-05-25 10:41:55	--------------------------------------------------------------------------------
-special_cropped_img/30.26±0.2.png	3.25±0.2                 	0.1481
-special_cropped_img/45±0.1.png	45±0.1                   	0.1899
-special_cropped_img/50±0.1.png	50±0.1                   	0.2300
-special_cropped_img/54.33±0.2.png	5..3±0.2                 	0.0060
-special_cropped_img/102.14±0.2.png	1.2±0.2                  	0.0642
-special_cropped_img/pingxingdu0.05A.png	∥0.034A                  	0.0698
-special_cropped_img/qingxiedu0.02E.png	∠0.02E                   	0.4684
-special_cropped_img/quantiaodong0.04D.png	⇉0.04D                   	0.6440
-special_cropped_img/section.png	☩∅..±Ⓜ贯°                 	0.0000
-special_cropped_img/test.png	☩∅0.3UP                  	0.6626
-special_cropped_img/tongzhoudufai0.07B.png	◎∅0.07B                  	0.5947
-special_cropped_img/xianlunkuodu0.05.png	◚0.6                     	0.6353
-special_cropped_img/―0.01.png	―0.01                    	0.2734
-special_cropped_img/↗0.01B.png	↗0.01B                   	0.4966
-special_cropped_img/↗0.01C.png	↗0.01C                   	0.4493
-special_cropped_img/⊥A0.05.png	⊥0.0.05                  	0.2536
-special_cropped_img/▱0.1.png	▱0.1                     	0.7859
-special_cropped_img/▱ 0.05.png	▱0.05                    	0.6018
-special_cropped_img/▱.png	47                       	0.8527
-special_cropped_img/◉0.03B-E.png	◎0.03BD                  	0.2974
-special_cropped_img/◉0.05T.png	◎0.05T                   	0.7852
-special_cropped_img/◉∅0.05C.png	☩0.05C                   	0.3813
-special_cropped_img/☩0.05F.png	☩0.05F                   	0.4072
-special_cropped_img/☩∅0.5A-BC-D.png	☩∅0.5BDBD                	0.0284
-special_cropped_img/☩∅0.6ABC.png	☩∅0.6C                   	0.1677
-special_cropped_img/⚍0.2E.png	⚍0.2E                    	0.6258
+2021-06-18 11:08:38	--------------------------------------------------------------------------------
+special_cropped_img/H,'94', '494', '138', '510'.png	4X∅10	0.4394
+special_cropped_img/H,'146', '21', '176', '37'.png	∅60 	0.9946
+special_cropped_img/H,'146', '280', '176', '294'.png	∅40	0.9874
+special_cropped_img/H,'152', '300', '170', '314'.png	20	0.9656
+special_cropped_img/H,'205', '496', '232', '510'.png	∅10	0.9913
+special_cropped_img/H,'253', '117', '281', '133'.png	∅24	0.7134
+special_cropped_img/H,'310', '494', '357', '510'.png	4X∅20	0.4399
+special_cropped_img/V,'102', '346', '121', '360'.png	66	0.9992
+special_cropped_img/V,'353', '324', '372', '337'.png	46	0.9959
+special_cropped_img/V,'376', '342', '394', '357'.png	66	0.9995
