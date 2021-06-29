@@ -6,6 +6,7 @@ import my_detector
 import skew_correction
 import re 
 import shutil
+import result_analysis
 
 
 # # 清空上次识别的结果
@@ -87,7 +88,7 @@ def detection(img_name,path):
 #                             --saved_model TPS-ResNet-BiLSTM-Attn-case-sensitive.pth \
 #                                 --sensitive''') 
 
-# eng_digits()
+
 
 def recognition1():
     '''普通模式'''
@@ -95,20 +96,21 @@ def recognition1():
         --Transformation TPS \
             --FeatureExtraction ResNet \
                 --SequenceModeling BiLSTM \
-                    --Prediction Attn \
+                    --Prediction CTC \
                         --image_folder special_cropped_img/ \
-                            --saved_model self_Attn.pth") 
+                            --saved_model self_trained_6.pth") 
+
 
 def recognition2():
     '''跳过检测直接识别公差框、孔特征等'''
-    os.system("D:/anaconda/envs/pytorch_/python.exe d:/vs_python_opencv_tesseract/package/special_char.py \
+    os.system("D:/anaconda/envs/pytorch_/python.exe d:/vs_python_opencv_tesseract/package/manual_char.py \
         --Transformation TPS \
             --FeatureExtraction ResNet \
                 --SequenceModeling BiLSTM \
                     --Prediction Attn \
-                        --image_folder manual_cropped_img/ \
+                        --image_folder manual_cropped_img \
                             --saved_model self_Attn.pth") 
-# special_char()
+
 
 def result_feedback(txt_name,img_name):
     '''把纵向检测的结果统一到横向图上'''
@@ -132,7 +134,8 @@ def result_feedback(txt_name,img_name):
             clean_list.append((int(result_list[i].split(',')[1][1:]),int(result_list[i].split(',')[2][:-1]),int(result_list[i].split(',')[3][2:]),int(result_list[i].split(',')[4][:-1]),int(result_list[i].split(',')[5][2:]),int(result_list[i].split(',')[6][:-1]),int(result_list[i].split(',')[7][2:]),int(result_list[i].split(',')[8].split(']')[0]),result_list[i].split('\t')[1]))
         # print(clean_list)
     return clean_list
-    
+
+
 def Visualization(result_list,img_name):
     img = cv2.imread(os.path.join(rotate_path,img_name))
     for i in result_list:
@@ -141,18 +144,21 @@ def Visualization(result_list,img_name):
             cv2.line(img,(i[2],i[3]),(i[4],i[5]),(0,255,0),1)
             cv2.line(img,(i[4],i[5]),(i[6],i[7]),(0,255,0),1) 
             cv2.line(img,(i[6],i[7]),(i[0],i[1]),(0,255,0),1)
-            # cv2.putText(img,i[8],(i[0]-5,i[1]-5),cv2.FONT_ITALIC,0.5,(255,0,0),2)
+            # cv2.putText(img,i[8],(i[0]-5,i[1]-5),cv2.FONT_ITALIC,0.5,(255,0,0),1)
             continue
             # cv2.drawContours(img, [i], 0, (255, 0, 0),1)
         cv2.rectangle(img,(i[0],i[1]),(i[2],i[3]),(0,0,255),1)
-        # cv2.putText(img,i[4],(i[0]-5,i[1]-5),cv2.FONT_ITALIC,0.5,(255,0,0),2)
+        # cv2.putText(img,i[4],(i[0]-5,i[1]-5),cv2.FONT_ITALIC,0.5,(255,0,0),1)
         cv2.namedWindow('recg_result',cv2.WINDOW_NORMAL)
     cv2.imshow('recg_result',img)
     cv2.waitKey(0)
 
 
-def main(img_name,opt):
-    h_90 = rotate(img_name,rotate_path)
+def res2excel(filename,opt):
+    result_analysis.result2excel(filename,opt)
+
+
+def main(opt):
     # if normal: #英文和数字
     #     shutil.rmtree('./normal_cropped_img')
     #     os.mkdir('normal_cropped_img')
@@ -163,16 +169,24 @@ def main(img_name,opt):
         
     # else: #特殊字符
     if opt == 0: #普通模式
+        list_pic = os.listdir('./original_rotate')
+        img_name = list_pic[0]
+        h_90 = rotate(img_name,rotate_path)
         shutil.rmtree('./special_cropped_img')
         os.mkdir('special_cropped_img')
         detection(img_name,'./special_cropped_img/') #生成裁剪后的文本截图
         recognition1()
         clean_list = result_feedback('special_result.txt',img_name)
         Visualization(clean_list,img_name)
+        # res2excel('test.xlsx',True)
     elif opt == 1: #跳过检测直接识别
+        # shutil.rmtree('./manual_cropped_img')
+        # os.mkdir('manual_cropped_img')
         recognition2()
-        clean_list = result_feedback('special_result.txt',img_name)
-        Visualization(clean_list,img_name)
+        # clean_list = result_feedback('manual_result.txt',img_name)
+        # Visualization(clean_list,img_name)
+        res2excel('test.xlsx',False) #把手动截取的放入识别结果中
+
 
 
 
@@ -189,10 +203,10 @@ def main(img_name,opt):
     raise ValueError("Axes={} out of range for array of ndim={}."
 ValueError: Axes=(0, 1) out of range for array of ndim=0.'''
 
-list_pic = os.listdir('./original_rotate')
+
 # print(list_pic)
 if __name__ == '__main__':
-    main(list_pic[0],0)
+    main(0)
     shutil.rmtree('./original_rotate')
     os.mkdir('original_rotate')
 
