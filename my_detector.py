@@ -4,19 +4,20 @@ import os
 
 
 pixel_threshold = 5 
-hw_threshold_hori = 1.2 #横检测高宽比
+hw_threshold_hori = 1.1 #横检测高宽比
 hw_threshold_vert = 1 #纵检测高宽比
-area_threshold = 2.5 #面积检测比
+area_threshold = 2 #面积检测比
 
 
 def clean_coor(coor_list):
+    '''对craft检测以后的坐标进行清洗，返回正常框和倾斜框的坐标列表（左上和右下）'''
     res=[]
     coor_normal_cleansed = []
     coor_skew_cleansed = []
     for x in range(len(coor_list)):
         if x%2==0:
             res.append(coor_list[x])
-    print('-0-0-0-0',res)
+    # print('-0-0-0-0',res)
     for i in res:
         tmp = i.split(',')
         if int(tmp[0]) != int(tmp[6]) or int(tmp[1]) != int(tmp[3]) or  int(tmp[2]) != int(tmp[4]) or int(tmp[5])!= int(tmp[7]):
@@ -29,19 +30,23 @@ def clean_coor(coor_list):
             L_normal.extend([i.split(',')[0],i.split(',')[1],i.split(',')[4],i.split(',')[5]])
             coor_normal_cleansed.append(L_normal)
     print('倾斜',coor_skew_cleansed)
-    print('垂直',coor_normal_cleansed)
+    # print('垂直',coor_normal_cleansed)
 
     return coor_normal_cleansed, coor_skew_cleansed
 
 
 def get_mode(list):
+    '''获得列表里的众数'''
     counts = np.bincount(list)
     mode = np.argmax(counts)  #获得高度的众数
     return mode
 
 
 def integration_check(coor_cleansed, rotate,hw_threshold,X):
-    '''判定准则
+    '''
+    对横检测和纵检测的两次识别结果进行整合。
+    
+    ##判定准则
     1.若两框中心x或y方向距离小于边长相交的距离（或者很接近），则判定为一个框，以大框为主扩展；
     2.横竖检测后先合并框，再将两次检测到的竖框互换；
     3.返回元组：修改后的坐标列表与需要旋转后检测的列表;
@@ -50,11 +55,11 @@ def integration_check(coor_cleansed, rotate,hw_threshold,X):
             解决办法：因为大部分横框的高都为字符高度，基本固定，若高度小于此高度且宽度等于字符高度，判定为单个竖排字符，在竖图上截图，在横图上显示
     '''
 
+
     '''center_coor = []
     for i in coor_cleansed:
         center = (0.5 * (int(i[2])+int(i[0])), 0.5 * (int(i[3])+int(i[1])))
         center_coor.append(center) #得到框中心点坐标的列表
-
     index = []
     new_block_list = []
     for j in range(len(coor_cleansed)): #合并框
@@ -77,9 +82,7 @@ def integration_check(coor_cleansed, rotate,hw_threshold,X):
                 new_block_list.append(new_block) #将新框的坐标写入列表中
                 index.append(j) #记录索引号 
                 index.append(k)
-
     coor_cleansed = [coor_cleansed[i] for i in range(len(coor_cleansed)) if (i not in index)] #删除选中的框
-
     for l in new_block_list:
         coor_cleansed.append(l) #将新生成的大框写入框坐标列表中
     vert_block = []
@@ -106,8 +109,6 @@ def integration_check(coor_cleansed, rotate,hw_threshold,X):
 
             else:
                 raise Exception('invalid rotation parameter')
-
-    
     coor_cleansed = [coor_cleansed[i] for i in range(len(coor_cleansed)) if (i not in vert_index)] #删除选中的框
     # 已合并完成，并剔除竖框（竖框存到对应右旋90度的图片坐标里）
     '''
@@ -121,9 +122,13 @@ def integration_check(coor_cleansed, rotate,hw_threshold,X):
         width = int(m[2]) - int(m[0])
         height = int(m[3]) - int(m[1])
         hori_height.append(height)
-        hori_width.append(width)
+        hori_width.append(width) 
         area.append(width*height)
 
+    print('总平均面积',np.mean(area))
+    area.remove(max(area))
+    area.remove(min(area))
+    mode= get_mode(hori_height) 
 
     for m in coor_cleansed: #在正常检测情况下，如果检测到竖框，则识别右旋90度对应位置的内容
  
@@ -133,39 +138,74 @@ def integration_check(coor_cleansed, rotate,hw_threshold,X):
         
         width = int(m[2]) - int(m[0])
         height = int(m[3]) - int(m[1])
-        area.remove(max(area))
-        new_mean = np.mean(area)
+        #删除单个竖排字符-------------------------------------------------
+        if len(hori_height) >= 5:
+            # print('字符高度众数：', mode)
+            if rotate == 90:
+                if width == mode and height < width: #该框的宽等于高度众数且高度小于宽度,判定为单个竖排字符
+                    print('横检测竖排单个字符？',m,width,mode,height)
+                    if abs(height-mode) <= 2:
+                        continue
+                    vert_block.append([str(X - int(m[3])),m[0],str(X - int(m[1])),m[2]])
+                    print(vert_block)
+                    vert_index.append(coor_cleansed.index(m))
 
-        if width*height > area_threshold*new_mean or width*height < np.mean(area)/area_threshold:#面积太大框删除
-                vert_index.append(coor_cleansed.index(m)) #把竖框的索引放到index列表中
+            elif rotate == -90:
+                if abs(width-mode) <= 2 and height < width: #该框的宽等于高度众数且高度小于宽度,判定为单个竖排字符
+                    print('纵检测竖排单个字符？',m,width,mode,height)
+                    if abs(height-mode) <= 2:
+                        continue
+                    vert_block.append([m[1],str(X - int(m[2])),m[3],str(X - int(m[0]))])
+                    # vert_index.append(coor_cleansed.index(m))
         
-        # print('面积-》',m[0],width*height)
-        
-        
-
-        mode= get_mode(hori_height)
-
+        #删除竖框-------------------------------------------------
         if rotate == 90:  #当前检测为横向，生成右旋90度的坐标
-            if height and width and height / width >= hw_threshold: #直接删除竖框文本
+            if height and width and height / width >= hw_threshold: #直接删除竖；框文本
+                # if abs(height-mode) <= 3: # and height / width >= 1.2:
+                #     print('检测到单个竖排字符(H)', m[0],height,mode)
+                #     continue
                 vert_index.append(coor_cleansed.index(m)) #把竖框的索引放到index列表中
-            if abs(width-mode) <= 3 and height < width: #该框的宽等于高度众数且高度小于宽度,判定为单个竖排字符
-                print('竖排？',m,width,mode,height)
-                if abs(height-mode) <= 3:
-                    continue
-                vert_block.append([str(X - int(m[3])),m[0],str(X - int(m[1])),m[2]])
-                vert_index.append(coor_cleansed.index(m))
+                print('横检测要删除的竖框：',m[0])
+            # if abs(width-mode) <= 2 and height < width: #该框的宽等于高度众数且高度小于宽度,判定为单个竖排字符
+            # if width == mode and height < width: #该框的宽等于高度众数且高度小于宽度,判定为单个竖排字符
+            #     print('横检测竖排文本？',m,width,mode,height)
+            #     if abs(height-mode) <= 2:
+            #         continue
+            #     vert_block.append([str(X - int(m[3])),m[0],str(X - int(m[1])),m[2]])
+            #     print(vert_block)
+            #     vert_index.append(coor_cleansed.index(m))
             # print(vert_block,'h_v')
         elif rotate == -90: #当前检测为纵向，，剩下的横框截图识别后再转换到横检测的坐标
             if height and width and height / width >= hw_threshold:#直接删除竖框文本
                 vert_index.append(coor_cleansed.index(m)) #把竖框的索引放到index列表中
-            if abs(width-mode) <= 3 and height < width: #该框的宽等于高度众数且高度小于宽度,判定为单个竖排字符
-                if abs(height-mode) <= 3:
-                    continue
-                vert_block.append([m[1],str(X - int(m[2])),m[3],str(X - int(m[0]))])
-    # print(np.mean(area))
+                print('纵检测要删除的竖框：',m[0])
+
+            # if abs(width-mode) <= 2 and height < width: #该框的宽等于高度众数且高度小于宽度,判定为单个竖排字符
+            #     print('纵检测竖排文本？',m,width,mode,height)
+            #     if abs(height-mode) <= 2:
+            #         continue
+            #     vert_block.append([m[1],str(X - int(m[2])),m[3],str(X - int(m[0]))])
+            #     vert_index.append(coor_cleansed.index(m))
+
+            # print(np.mean(area))
+        #去掉最大面积和最小面积求平均面积-----------------------------------
+        #待添加倾斜框面积的判定
+        if len(area) > 2:
+            new_mean = np.mean(area) if len(area) else None
+            # print('去掉极值后的平均面积',new_mean)
+            if new_mean:
+                # if width*height > area_threshold*new_mean or width*height < new_mean/area_threshold:#面积太大或太小框删除
+                if width*height > area_threshold*new_mean: # or width*height < new_mean/area_threshold:#面积太大框删除
+                    if height / width < 0.5:
+                        continue
+                    print('面积太大，删除：',m[0])
+                    vert_index.append(coor_cleansed.index(m)) #把竖框的索引放到index列表中
+            
+                    # print('面积-》',m[0],width*height)
+            
 
     vert_index = list(set(vert_index)) #去除重复的项
-
+    print('需要删除的索引',vert_index)
     coor_cleansed = [coor_cleansed[i] for i in range(len(coor_cleansed)) if (i not in vert_index)] #删除选中的框
     # 已合并完成，并剔除竖框（竖框存到对应右旋90度的图片坐标里）
 
@@ -173,9 +213,16 @@ def integration_check(coor_cleansed, rotate,hw_threshold,X):
 
 
 def similariity_check(hori_block,vert_block,X):
-    '''比较横竖两次检测的相同框
+    '''
+    对两次检测中的位置相同的框进行整合
+
+    ##判定准则
     1.如果框是正方形，以横检测为主；
     2.如果两次检测的框中心坐标距离小于一定值，以横检测为主，删除纵检测的框
+    ##待添加：
+     纵检测检测到的竖框和横检测同位置的倾斜框，横检测检测到的竖框和纵检测同位置的倾斜框，如何合并？
+     若两框接近，一个框完全包含另一个框，则删除小框？还是大框？ 待定
+    计算交并比！！ 中心接近并且交并比大于一定的值视为重叠框
     '''
     del_index = []
 
@@ -184,10 +231,10 @@ def similariity_check(hori_block,vert_block,X):
             # [m[1],str(X - int(m[2])),m[3],str(X - int(m[0]))]
             rect_center_i = ((int(i[0])+int(i[2]))/2,(int(i[1])+int(i[3]))/2)
             rect_center_j = ((int(j[1])+int(j[3]))/2, (int(X - int(j[2]))+int(X - int(j[0])))/2)
-            print(rect_center_i,rect_center_j)
+            # print(rect_center_i,rect_center_j)
             #  ((int(i[0])+int(i[2]))/2, (int(i[1])+int(i[3]))/2),( (int(i[1])+int(i[3]))/2))
             if (rect_center_i[0]-rect_center_j[0])**2 + (rect_center_i[1]-rect_center_j[1])**2 < 100:
-                print('bingo')
+                print('bingo',i,j)
                 del_index.append(vert_block.index(j))
             # if 
 
@@ -219,10 +266,7 @@ def del_sim(block_list):
 
 
 def block_clean(img_vert,hori_txt,vert_txt):
-    # img_hori = cv2.imread('./figures/'+ hori_path)
-    # img_vert = np.rot90(img_hori,axes=(1,0)) #右旋90度
-    # img_vert = cv2.imread(os.path.join(rotate_path,img_name.split('.')[0] + '_90.png'))#右旋90度
-    # 调用craft,生成定位的坐标TXT文件
+    '''读取检测后的TXT文件，生成处理后两次检测的框坐标列表，以及倾斜框'''
     os.system("D:/anaconda/envs/pytorch_/python.exe D:/vs_python_opencv_tesseract/package/craft_test.py ") #python 后面需要接绝对路径，生成txt文件
     f = open(hori_txt,'r') #图片的检测结果txt
     coor_list = f.readlines() #存成每一行数据的列表
@@ -232,7 +276,6 @@ def block_clean(img_vert,hori_txt,vert_txt):
     # h, w, d = img_vert.shape
     h,w = img_vert.shape[:-1]
     coor_cleansed,hori_skew_cleansed = clean_coor(coor_list) #只对横检测
-    
     # print('-未处理横'*10,coor_cleansed)
     coor_cleansed_90 = clean_coor(coor_list_90)[0]
     # print('-未处理竖'*10,coor_cleansed)
