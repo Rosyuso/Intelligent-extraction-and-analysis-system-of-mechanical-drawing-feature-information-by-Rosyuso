@@ -32,6 +32,7 @@ def rotate(img_name,rotate_path):
 # rotate('test4.png','./original_rotate')
 
 def get_h(img_name,rotate_path):
+    '''获得图片的高'''
     img=cv2.imread(os.path.join(rotate_path,img_name),1)
     h = img.shape[0]
     return h
@@ -42,6 +43,7 @@ def detection(img_name,path):
     img = cv2.imread(os.path.join(rotate_path,img_name))
     img_90 = cv2.imread(os.path.join(rotate_path,img_name.split('.')[0] + '_90.png'))
     normal_hori_block,normal_vert_block,skew_hori_block = my_detector.block_clean(img_90, os.path.join(rotate_path,'res_' + img_name.split('.')[0]+'.txt'), os.path.join(rotate_path,'res_' + img_name.split('.')[0]+'_90.txt'))
+    print('倾斜文本坐标',skew_hori_block)
     # 两个列表都只含横框，截图识别后把纵检测的横框转换成横检测里的框，再展示
     # print('已处理'*10,normal_hori_block,'\n',normal_vert_block,skew_hori_block)
     #      [['537', '24', '571', '59'], ['143', '95', '195', '128'], ['191', '271', '225', '304'],
@@ -60,6 +62,7 @@ def detection(img_name,path):
     for m in skew_hori_block:
         result = skew_correction.skew_correction(img,m)
         if result is False:
+            print('倾斜处理失败')
             continue
         else:
             cv2.imwrite(path+'HS,'+str(m)[1:-1]+'.png',result)
@@ -113,7 +116,7 @@ def recognition2():
 
 
 def result_feedback(txt_name,img_name):
-    '''把纵向检测的结果统一到横向图上'''
+    '''把纵向检测的结果统一到横向图上，返回统一后的坐标列表'''
     h = get_h(img_name,rotate_path)
     f = open(txt_name,'r',encoding='utf-8')
     result_list = f.readlines()
@@ -137,6 +140,7 @@ def result_feedback(txt_name,img_name):
 
 
 def Visualization(result_list,img_name):
+    '''可视化：将检测结果显示在图片上'''
     img = cv2.imread(os.path.join(rotate_path,img_name))
     for i in result_list:
         if len(i) == 9:
@@ -155,19 +159,11 @@ def Visualization(result_list,img_name):
 
 
 def res2excel(filename,opt):
+    '''将识别结果写入Excel表中'''
     result_analysis.result2excel(filename,opt)
 
 
-def main(opt):
-    # if normal: #英文和数字
-    #     shutil.rmtree('./normal_cropped_img')
-    #     os.mkdir('normal_cropped_img')
-    #     detection(img_name,'./normal_cropped_img/') #生成裁剪后的文本截图
-    #     eng_digits(img_name)
-    #     clean_list = result_feedback('normal_result.txt',img_name)
-    #     Visualization(clean_list,img_name)
-        
-    # else: #特殊字符
+def myocr(opt):
     if opt == 0: #普通模式
         list_pic = os.listdir('./original_rotate')
         img_name = list_pic[0]
@@ -178,7 +174,7 @@ def main(opt):
         recognition1()
         clean_list = result_feedback('special_result.txt',img_name)
         Visualization(clean_list,img_name)
-        # res2excel('test.xlsx',True)
+        res2excel('test.xlsx',True)
     elif opt == 1: #跳过检测直接识别
         # shutil.rmtree('./manual_cropped_img')
         # os.mkdir('manual_cropped_img')
@@ -206,7 +202,7 @@ ValueError: Axes=(0, 1) out of range for array of ndim=0.'''
 
 # print(list_pic)
 if __name__ == '__main__':
-    main(0)
+    myocr(0)
     shutil.rmtree('./original_rotate')
     os.mkdir('original_rotate')
 
