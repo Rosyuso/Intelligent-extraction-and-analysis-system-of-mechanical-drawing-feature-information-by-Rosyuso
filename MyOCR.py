@@ -1,5 +1,4 @@
 import cv2
-import sys
 import numpy as np
 import os 
 import my_detector
@@ -7,6 +6,7 @@ import skew_correction
 import re 
 import shutil
 import result_analysis
+import matching
 
 
 # # 清空上次识别的结果
@@ -26,7 +26,7 @@ def rotate(img_name,rotate_path):
     '''生成右旋90度的图片并保存'''
     img=cv2.imread(os.path.join(rotate_path,img_name))
     img90=np.rot90(img,3)
-    h_90 = img90.shape[0]
+    h_90 = img90.shape[1]
     cv2.imwrite(os.path.join(rotate_path,img_name.split('.')[0] + '_90.png'), img90)
     return h_90
 # rotate('test4.png','./original_rotate')
@@ -163,25 +163,37 @@ def res2excel(filename,opt):
     result_analysis.result2excel(filename,opt)
 
 
-def myocr(opt):
+def myocr(opt, shaft=False):
+    list_pic = os.listdir('./original_rotate')
+    img_name = list_pic[0]
+    img = cv2.imread(os.path.join(rotate_path,img_name))
+    h_90 = rotate(img_name,rotate_path)
     if opt == 0: #普通模式
-        list_pic = os.listdir('./original_rotate')
-        img_name = list_pic[0]
-        h_90 = rotate(img_name,rotate_path)
         shutil.rmtree('./special_cropped_img')
         os.mkdir('special_cropped_img')
         detection(img_name,'./special_cropped_img/') #生成裁剪后的文本截图
         recognition1()
         clean_list = result_feedback('special_result.txt',img_name)
         Visualization(clean_list,img_name)
-        res2excel('test.xlsx',True)
+        coor,text = result_analysis.result2excel('test.xlsx',True, h_90)
+        # 轴类
+        if shaft == True:
+            cleansed_img = matching.get_cleansed(img)
+            cv2.imshow('cleansed_img', cleansed_img)
+            cv2.waitKey(0)
+            rect, shaft_length = matching.split_rect(cleansed_img)
+            # corner = matching
+            matching.text_match_coor(coor, text, rect, shaft_length)
+            print('文本->',text)
+            print('坐标->', coor)
+            print('矩形阶梯截面->', rect)
     elif opt == 1: #跳过检测直接识别
         # shutil.rmtree('./manual_cropped_img')
         # os.mkdir('manual_cropped_img')
         recognition2()
         # clean_list = result_feedback('manual_result.txt',img_name)
         # Visualization(clean_list,img_name)
-        res2excel('test.xlsx',False) #把手动截取的放入识别结果中
+        result_analysis.result2excel('test.xlsx',False, h_90) #把手动截取的放入识别结果中
 
 
 
@@ -202,7 +214,7 @@ ValueError: Axes=(0, 1) out of range for array of ndim=0.'''
 
 # print(list_pic)
 if __name__ == '__main__':
-    myocr(0)
+    myocr(0,shaft=True)
     shutil.rmtree('./original_rotate')
     os.mkdir('original_rotate')
 
