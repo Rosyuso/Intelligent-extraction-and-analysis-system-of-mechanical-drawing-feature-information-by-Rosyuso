@@ -1,27 +1,29 @@
 import xlsxwriter as xw
+import cv2
 
+'''
+        数据形如：
+        manual_cropped_img\1.png	⊥0.01B	0.9936
+        manual_cropped_img\2.png	☩∅0.2B	0.9823
+        manual_cropped_img\3.png	▱0.01	0.9948
+        manual_cropped_img\4.png	11.25±0.5	0.4134
+        manual_cropped_img\5.png	☩∅0.02A	0.4861
+        manual_cropped_img\1.png	∥∅0.01B	0.9936
+        manual_cropped_img\2.png	☩∅0.2B	0.9823
+        manual_cropped_img\3.png	▱0.01	0.9948
+        manual_cropped_img\4.png	11.25±0.02	0.4134
+        manual_cropped_img\5.png	☩∅0.02A	0.4861
+        manual_cropped_img\1.png	◠0.01	0.9936
+        manual_cropped_img\2.png	☩∅0.2B	0.9823
+        manual_cropped_img\3.png	▱0.01	0.9948
+        manual_cropped_img\4.png	11.25±0.02	0.4134
+        manual_cropped_img\5.png	◎∅0.02C	0.4861
+        manual_cropped_img\1.png	☩∅0.01B	0.9936
+        manual_cropped_img\2.png	⛙0.2B	0.9823
+        manual_cropped_img\3.png	▱0.01	0.9948
+        manual_cropped_img\4.png	11±0.02	0.4134
+        manual_cropped_img\5.png	☩∅0.02A	0.4861
 
-'''形如：
-manual_cropped_img\1.png	⊥0.01B	0.9936
-manual_cropped_img\2.png	☩∅0.2B	0.9823
-manual_cropped_img\3.png	▱0.01	0.9948
-manual_cropped_img\4.png	11.25±0.5	0.4134
-manual_cropped_img\5.png	☩∅0.02A	0.4861
-manual_cropped_img\1.png	∥∅0.01B	0.9936
-manual_cropped_img\2.png	☩∅0.2B	0.9823
-manual_cropped_img\3.png	▱0.01	0.9948
-manual_cropped_img\4.png	11.25±0.02	0.4134
-manual_cropped_img\5.png	☩∅0.02A	0.4861
-manual_cropped_img\1.png	◠0.01	0.9936
-manual_cropped_img\2.png	☩∅0.2B	0.9823
-manual_cropped_img\3.png	▱0.01	0.9948
-manual_cropped_img\4.png	11.25±0.02	0.4134
-manual_cropped_img\5.png	◎∅0.02C	0.4861
-manual_cropped_img\1.png	☩∅0.01B	0.9936
-manual_cropped_img\2.png	⛙0.2B	0.9823
-manual_cropped_img\3.png	▱0.01	0.9948
-manual_cropped_img\4.png	11±0.02	0.4134
-manual_cropped_img\5.png	☩∅0.02A	0.4861
 '''
 
 Cap_char = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
@@ -44,12 +46,21 @@ for i in range(len(Cap_char)):
 # print(Cap_charl)
 
 
-def txt2list(opt=True):
+def txt2list(X, opt=True):
+    '''读取TXT并返回坐标列表'''
     L_result = list()
+    coor = list()
     f = open('special_result.txt','r',encoding='utf-8')
     coor_list = f.readlines() #存成每一行数据的列表
     for i in range(1,len(coor_list)):
-        L_result.append(coor_list[i].split('\t')[1])
+        line = coor_list[i].split('\t')
+        L_result.append(line[1])
+        if coor_list[i].split('/')[1][0] == 'H':
+            # print('qiegeH', line[0].split('\''))
+            coor.append([int(line[0].split('\'')[1]), int(line[0].split('\'')[3]), int(line[0].split('\'')[5]), int(line[0].split('\'')[7])])
+        elif coor_list[i].split('/')[1][0] == 'V':
+            # print('qiegeV', line[0].split('\''))
+            coor.append([int(line[0].split('\'')[3]), int(X - int(line[0].split('\'')[5])), int(line[0].split('\'')[7]), int(X - int(line[0].split('\'')[1]))])
     if opt == False:#直接识别特殊字符模式
         g = open('manual_result.txt','r',encoding='utf-8')
         coor_list_m = g.readlines() #存成每一行数据的列表
@@ -57,11 +68,11 @@ def txt2list(opt=True):
         for j in range(1,len(coor_list_m)):
             L_result.append(coor_list_m[j].split('\t')[1])
     # print(L_result)
-    return L_result
+    return L_result,coor
 
 
 def list2data(L_result):
-
+    '''对数据列表处理，生成分类后的列表'''
     data_diameter, data_radius, data_tolerance,data_pm,data_normal,data_recess,data_match,data_thread = [],[],[],[],[],[],[],[]
     diameter_index, radius_index,tolerance_index,pm_index,n_index,recess_index,match_index,thread_index = 1,1,1,1,1,1,1,1
 
@@ -77,15 +88,28 @@ def list2data(L_result):
         elif L_result[i][0] == 'R': #单纯半径 ,形如R16
             data_radius.append({"id": radius_index, "radius": L_result[i], "amount": 1,"R_i":i})
             radius_index += 1
-        elif L_result[i][1] == 'X' and L_result[i][2]:  #圆周阵列孔（相同孔），例如2X∅12,2-∅8
+        # if len(L_result[i]) >= 3:
+        #     if L_result[i][1] == 'X' and L_result[i][2]:  #圆周阵列孔（相同孔），例如2X∅12,2-∅8
+        #         if L_result[i][2] == '∅':
+        #             data_diameter.append({"id": diameter_index, "diameter": L_result[i].split('X')[1], "amount": L_result[i].split('X')[0],"∅_i":i})
+        #             diameter_index += 1
+        #     if L_result[i][1] in '-' and L_result[i][2]: #圆周阵列孔（相同孔），例如2X∅12,2-∅8
+        #         if L_result[i][2] == '∅':
+        #             data_diameter.append({"id": diameter_index, "diameter": L_result[i].split('-')[1], "amount": L_result[i].split('-')[0],"∅_i":i})
+        #             diameter_index += 1
+        #     if L_result[i][1] == 'X' and L_result[i][2] == 'R': #圆周阵列孔（相同孔），例如2X∅12
+        #         data_radius.append({"id": radius_index, "radius": L_result[i].split('X')[1], "amount": L_result[i].split('X')[0],"R_i":i})
+        #         radius_index += 1
+                # if len(L_result[i]) >= 3:
+        elif len(L_result[i]) >= 3 and L_result[i][1] == 'X' and L_result[i][2]:  #圆周阵列孔（相同孔），例如2X∅12,2-∅8
             if L_result[i][2] == '∅':
                 data_diameter.append({"id": diameter_index, "diameter": L_result[i].split('X')[1], "amount": L_result[i].split('X')[0],"∅_i":i})
                 diameter_index += 1
-        elif L_result[i][1] in '-' and L_result[i][2]: #圆周阵列孔（相同孔），例如2X∅12,2-∅8
+        elif len(L_result[i]) >= 3 and L_result[i][1] in '-' and L_result[i][2]: #圆周阵列孔（相同孔），例如2X∅12,2-∅8
             if L_result[i][2] == '∅':
                 data_diameter.append({"id": diameter_index, "diameter": L_result[i].split('-')[1], "amount": L_result[i].split('-')[0],"∅_i":i})
                 diameter_index += 1
-        elif L_result[i][1] == 'X' and L_result[i][2] == 'R': #圆周阵列孔（相同孔），例如2X∅12
+        elif len(L_result[i]) >= 3 and L_result[i][1] == 'X' and L_result[i][2] == 'R': #圆周阵列孔（相同孔），例如2X∅12
             data_radius.append({"id": radius_index, "radius": L_result[i].split('X')[1], "amount": L_result[i].split('X')[0],"R_i":i})
             radius_index += 1
         # elif 
@@ -150,6 +174,7 @@ def list2data(L_result):
 
 
 def xw_toExcel(data, fileName,title,head_name):  # xlsxwriter库储存数据到excel
+    '''写入Excel表'''
     workbook = xw.Workbook(fileName)  # 创建工作簿
     bold_title = workbook.add_format({
         'bold':  True,  # 字体加粗
@@ -231,12 +256,21 @@ def xw_toExcel(data, fileName,title,head_name):  # xlsxwriter库储存数据到e
 
 
 
-def result2excel(fileName,opt):
+def result2excel(fileName,opt,X):
+    '''将识别结果写入Excel表中'''
+    # print('坐标->',txt2list(X,opt)[1])
+    text = txt2list(X,opt)[0]
+    coor = txt2list(X,opt)[1]
+    chart = list2data(text)
+    # print('表格数据->',chart)
+    # print('文本->',text)
+    # print('坐标->', coor)
+    xw_toExcel(chart,fileName,title,head_name)
     
-    data = list2data(txt2list(opt))
-
-    xw_toExcel(data,fileName,title,head_name)
-
+    return coor,text
+# pic = cv2.imread('./shaft/32.png')
+# h,w = pic.shape[:-1]
+# result2excel('test.xlsx',True,h)
 # fileName = 'test.xlsx'
 # result2excel(fileName)
 # xw_toExcel(testData, fileName)
